@@ -1,0 +1,85 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Case {
+  id              String   @id
+  agencyId        String?
+  agency          String?
+  title           String
+  category        String?
+  subCategory     String?
+  status          String   @default("รับเรื่อง")
+  date            String?
+  lastUpdated     String?
+  budget          String?
+  visibility      String   @default("Internal")
+  restrictedNotes String?
+  description     String?
+  agencyType      String?
+  agencyRole      String?
+  region          String?
+  province        String?
+  district        String?
+  subDistrict     String?
+  relatedPerson1  String?
+  relatedPerson2  String?
+  relatedAgencies Json     @default("[]")
+  documents       Json     @default("[]")
+  activityLog     Json     @default("[]")
+  timeline        Json     @default("[]")
+  pendingDelete   Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("cases")
+}
+
+model Agency {
+  id          String   @id
+  name        String
+  typeCode    String?
+  subtypeCode String?
+  region      String?
+  province    String?
+  district    String?
+  subdistrict String?
+  cases       Int      @default(0)
+  logo        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("agencies")
+}
+
+model User {
+  id        String   @id
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("user")
+  status    String   @default("Active")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model SystemLog {
+  id         Int      @id @default(autoincrement())
+  date       String
+  name       String
+  role       String?
+  action     String
+  entityType String?
+  entityId   String?
+  entityName String?
+  createdAt  DateTime @default(now())
+
+  @@map("system_logs")
+}

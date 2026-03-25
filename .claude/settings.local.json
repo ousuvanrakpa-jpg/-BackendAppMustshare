@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -lh src/Page/*.jsx)",
+      "Bash(npm install:*)",
+      "Bash(node -e \":*)"
+    ]
+  }
+}
