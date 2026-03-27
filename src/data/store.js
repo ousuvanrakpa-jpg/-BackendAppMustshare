@@ -80,22 +80,42 @@ const users = [
 const logs = []
 let logIdCounter = 1
 
+// ─── ID counters (initialized from seed data to avoid collisions) ─────────────
+let caseIdCounter = cases.reduce((max, c) => {
+  const n = parseInt(c.id.split('-')[1], 10)
+  return isNaN(n) ? max : Math.max(max, n)
+}, 0) + 1
+
+let agencyIdCounter = agencies.reduce((max, a) => {
+  const n = parseInt(a.id.split('-')[1], 10)
+  return isNaN(n) ? max : Math.max(max, n)
+}, 0) + 1
+
+let userIdCounter = users.reduce((max, u) => {
+  const n = parseInt(u.id.split('-')[1], 10)
+  return isNaN(n) ? max : Math.max(max, n)
+}, 0) + 1
+
 // ─── ID helpers ───────────────────────────────────────────────────────────────
-function nextCaseId() {
-  const nums = cases.map(c => parseInt(c.id.split('-')[1], 10))
-  const max = nums.length ? Math.max(...nums) : 0
-  return `CA-${String(max + 1).padStart(4, '0')}`
-}
-function nextAgencyId() {
-  const nums = agencies.map(a => parseInt(a.id.split('-')[1], 10))
-  const max = nums.length ? Math.max(...nums) : 0
-  return `AG-${String(max + 1).padStart(4, '0')}`
-}
-function nextUserId() {
-  const nums = users.map(u => parseInt(u.id.split('-')[1], 10))
-  const max = nums.length ? Math.max(...nums) : 0
-  return `USR-${String(max + 1).padStart(3, '0')}`
-}
+function nextCaseId()   { return `CA-${String(caseIdCounter++).padStart(4, '0')}` }
+function nextAgencyId() { return `AG-${String(agencyIdCounter++).padStart(4, '0')}` }
+function nextUserId()   { return `USR-${String(userIdCounter++).padStart(3, '0')}` }
 function nextLogId() { return logIdCounter++ }
 
-module.exports = { cases, agencies, users, logs, nextCaseId, nextAgencyId, nextUserId, nextLogId }
+// ─── Test helper: reset store to seed state ───────────────────────────────────
+const SEED_CASE_COUNT   = cases.length
+const SEED_AGENCY_COUNT = agencies.length
+const SEED_USER_COUNT   = users.length
+
+function resetStore() {
+  cases.splice(SEED_CASE_COUNT)
+  agencies.splice(SEED_AGENCY_COUNT)
+  users.splice(SEED_USER_COUNT)
+  logs.splice(0)
+  caseIdCounter   = SEED_CASE_COUNT + 1
+  agencyIdCounter = SEED_AGENCY_COUNT + 1
+  userIdCounter   = SEED_USER_COUNT + 1
+  logIdCounter    = 1
+}
+
+module.exports = { cases, agencies, users, logs, nextCaseId, nextAgencyId, nextUserId, nextLogId, resetStore }

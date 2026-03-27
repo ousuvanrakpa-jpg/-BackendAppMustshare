@@ -28,8 +28,8 @@ router.get('/:id', authenticate, (req, res) => {
   res.json(agency)
 })
 
-// POST /api/agencies
-router.post('/', authenticate, (req, res) => {
+// POST /api/agencies  (admin only)
+router.post('/', authenticate, requireAdmin, (req, res) => {
   const id = nextAgencyId()
   const { id: _id, ...rest } = req.body
   const newAgency = { id, cases: 0, logo: '', ...rest }
@@ -37,8 +37,8 @@ router.post('/', authenticate, (req, res) => {
   res.status(201).json(newAgency)
 })
 
-// PUT /api/agencies/:id
-router.put('/:id', authenticate, (req, res) => {
+// PUT /api/agencies/:id  (admin only)
+router.put('/:id', authenticate, requireAdmin, (req, res) => {
   const idx = agencies.findIndex(a => a.id === req.params.id)
   if (idx === -1) return res.status(404).json({ error: 'Agency not found' })
   const { id, ...rest } = req.body
