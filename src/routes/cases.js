@@ -35,6 +35,7 @@ function rowToCase(row) {
     documents:          row.documents || [],
     activityLog:        row.activity_log || [],
     timeline:           row.timeline || [],
+    notes:              row.notes || [],
   }
 }
 
@@ -120,9 +121,9 @@ router.post('/', authenticate, async (req, res) => {
          status, date, budget, source, last_updated, visibility, restricted_notes,
          description, agency_type, agency_role, region, province, district, sub_district,
          related_person1, related_person2, pending_delete, related_agencies,
-         documents, activity_log, timeline, project_type
+         documents, activity_log, timeline, project_type, notes
        ) VALUES (
-         $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29
+         $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30
        ) RETURNING *`,
       [
         id, b.agencyId||null, b.title||'', b.agency||'', b.category||'', b.subCategory||'',
@@ -136,6 +137,7 @@ router.post('/', authenticate, async (req, res) => {
         JSON.stringify(b.activityLog||[]),
         JSON.stringify(b.timeline||[]),
         b.projectType||'',
+        JSON.stringify(b.notes||[]),
       ]
     )
     res.status(201).json(rowToCase(rows[0]))
@@ -160,8 +162,8 @@ router.put('/:id', authenticate, async (req, res) => {
          agency_type=$15, agency_role=$16, region=$17, province=$18, district=$19,
          sub_district=$20, related_person1=$21, related_person2=$22,
          pending_delete=$23, related_agencies=$24, documents=$25,
-         activity_log=$26, timeline=$27, project_type=$28
-       WHERE id=$29 RETURNING *`,
+         activity_log=$26, timeline=$27, project_type=$28, notes=$29
+       WHERE id=$30 RETURNING *`,
       [
         b.agencyId||null, b.title||'', b.agency||'', b.category||'', b.subCategory||'',
         b.procurementMethod||'', b.status||'', b.date||'', b.budget||'', b.source||'',
@@ -174,6 +176,7 @@ router.put('/:id', authenticate, async (req, res) => {
         JSON.stringify(b.activityLog||[]),
         JSON.stringify(b.timeline||[]),
         b.projectType||'',
+        JSON.stringify(b.notes||[]),
         req.params.id,
       ]
     )
