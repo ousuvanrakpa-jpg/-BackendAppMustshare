@@ -7,6 +7,7 @@ const casesRoutes = require('./routes/cases');
 const agenciesRoutes = require('./routes/agencies');
 const usersRoutes = require('./routes/users');
 const logsRoutes = require('./routes/logs');
+const geographyRoutes = require('./routes/geography');
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.use('/api/cases', casesRoutes);
 app.use('/api/agencies', agenciesRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/logs', logsRoutes);
+app.use('/api/geography', geographyRoutes);
 
 app.use((err, req, res, _next) => {
   console.error(err.stack);
