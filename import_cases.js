@@ -123,8 +123,9 @@ async function main() {
     const timeline = timelineMap[caseId] || []
 
     // แปลง column names ให้ตรงกับ DB
-    const visibility      = 'Internal'
-    const source          = str(row.casesource || row.source || '')
+    const visibility       = 'Internal'
+    const personVisibility = str(row['visibility Level'] || row['visibility_level'] || 'Internal')
+    const source           = str(row.casesource || row.source || '')
     const subDistr        = str(row.Sub_district || row.sub_district || '')
     const date            = excelDateToString(row.date) || today
     const restrictedNotes = str(row.restricted_notes || '')
@@ -169,6 +170,7 @@ async function main() {
       JSON.stringify(timeline),
       str(row.project_type),
       JSON.stringify(notes),
+      personVisibility,
     ]
 
     if (DRY_RUN) {
@@ -187,8 +189,8 @@ async function main() {
              agency_type=$15, agency_role=$16, region=$17, province=$18, district=$19,
              sub_district=$20, related_person1=$21, related_person2=$22,
              related_agencies=$23, documents=$24, activity_log=$25, timeline=$26,
-             project_type=$27, notes=$28
-           WHERE id=$29`,
+             project_type=$27, notes=$28, person_visibility=$29
+           WHERE id=$30`,
           [...params, caseId]
         )
         console.log(`  ✓ UPDATE ${caseId}: ${str(row.title).slice(0, 50)}`)
@@ -200,9 +202,10 @@ async function main() {
              status, date, budget, source, last_updated, visibility, restricted_notes,
              description, agency_type, agency_role, region, province, district,
              sub_district, related_person1, related_person2,
-             related_agencies, documents, activity_log, timeline, project_type, notes
+             related_agencies, documents, activity_log, timeline, project_type, notes,
+             person_visibility
            ) VALUES (
-             $29,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28
+             $30,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29
            )`,
           [...params, caseId]
         )
