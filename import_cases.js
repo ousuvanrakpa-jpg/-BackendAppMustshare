@@ -218,12 +218,29 @@ async function main() {
     }
   }
 
+  // ลบเคสที่ไม่มีใน Excel แล้ว
+  const excelIds = new Set(validCases.map(r => str(r.case_id)))
+  const { rows: dbRows } = await pool.query('SELECT id FROM cases')
+  const toDelete = dbRows.map(r => r.id).filter(id => !excelIds.has(id))
+  let deleted = 0
+  for (const id of toDelete) {
+    if (DRY_RUN) {
+      console.log(`  [DRY] DELETE ${id}`)
+      deleted++
+      continue
+    }
+    await pool.query('DELETE FROM cases WHERE id = $1', [id])
+    console.log(`  ✓ DELETE ${id}`)
+    deleted++
+  }
+
   await pool.end()
 
   console.log('\n' + '='.repeat(60))
   console.log('สรุปผล:')
   console.log(`  INSERT : ${inserted}`)
   console.log(`  UPDATE : ${updated}`)
+  console.log(`  DELETE : ${deleted}`)
   console.log(`  ผิดพลาด: ${errors}`)
   console.log('='.repeat(60))
   if (DRY_RUN) console.log('\n⚠ DRY RUN — ไม่มีการบันทึกจริง')
