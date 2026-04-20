@@ -17,13 +17,20 @@ const pool = new Pool({
 
 const args     = process.argv.slice(2)
 const filePath = args.find(a => !a.startsWith('--'))
-  || path.join('C:', 'Users', 'rakpa', 'Backend_AppMustshare', 'data_for_database', 'cases_import.xlsx')
+  || path.join('C:', 'Users', 'rakpa', 'Backend_AppMustshare', 'data_for_database', 'cases_import_0.2.xlsx')
 const DRY_RUN  = args.includes('--dry-run')
 
 // แปลง Excel date serial → YYYY-MM-DD
 function excelDateToString(val) {
   if (!val) return ''
   if (typeof val === 'string' && val.includes('-')) return val.slice(0, 10)
+  if (typeof val === 'string' && val.includes('/')) {
+    const parts = val.split('/')
+    if (parts.length === 3) {
+      const [d, m, y] = parts
+      return `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`
+    }
+  }
   if (typeof val === 'number') {
     const date = new Date((val - 25569) * 86400 * 1000)
     return date.toISOString().slice(0, 10)
@@ -43,13 +50,15 @@ async function main() {
 
   // อ่าน Excel
   const wb = XLSX.readFile(filePath)
-  const caseRows    = XLSX.utils.sheet_to_json(wb.Sheets['cases']          || {}, { defval: '' })
-  const relatedRows = XLSX.utils.sheet_to_json(wb.Sheets['related_agencies']|| {}, { defval: '' })
-  const timelineRows= XLSX.utils.sheet_to_json(wb.Sheets['timeline']        || {}, { defval: '' })
+  const caseRows    = XLSX.utils.sheet_to_json(wb.Sheets['cases']           || {}, { defval: '' })
+  const relatedRows = XLSX.utils.sheet_to_json(wb.Sheets['related_agencies'] || {}, { defval: '' })
+  const timelineRows= XLSX.utils.sheet_to_json(wb.Sheets['timeline']         || {}, { defval: '' })
+  const personRows  = XLSX.utils.sheet_to_json(wb.Sheets['related_persons']  || {}, { defval: '' })
 
   console.log(`cases:             ${caseRows.length} rows`)
   console.log(`related_agencies:  ${relatedRows.length} rows`)
   console.log(`timeline:          ${timelineRows.length} rows`)
+  console.log(`related_persons:   ${personRows.length} rows`)
 
   // กรองแถวว่าง
   const validCases = caseRows.filter(r => str(r.title) && str(r.case_id))
@@ -72,6 +81,16 @@ async function main() {
     const entry = { date: excelDateToString(t.date), status: str(t.status) }
     if (str(t.note)) entry.note = str(t.note)
     timelineMap[key].push(entry)
+  }
+
+  // จัดกลุ่ม related_persons ตาม case_id (ใช้ชื่อ + ตำแหน่ง)
+  const personMap = {}
+  for (const p of personRows) {
+    const key = str(p.case_id)
+    if (!key) continue
+    if (!personMap[key]) personMap[key] = []
+    const label = str(p.person_position) ? `${str(p.person_name)} (${str(p.person_position)})` : str(p.person_name)
+    if (label) personMap[key].push(label)
   }
 
   // โหลด agency names จาก DB
@@ -104,7 +123,7 @@ async function main() {
     const timeline = timelineMap[caseId] || []
 
     // แปลง column names ให้ตรงกับ DB
-    const visibility      = str(row['visibility Level'] || row['visibility'] || 'Internal')
+    const visibility      = 'Internal'
     const source          = str(row.casesource || row.source || '')
     const subDistr        = str(row.Sub_district || row.sub_district || '')
     const date            = excelDateToString(row.date) || today
@@ -114,6 +133,12 @@ async function main() {
     const notes = restrictedNotes
       ? [{ name: 'ระบบ', date: today, text: restrictedNotes }]
       : []
+
+    // สร้าง documents จาก data_source columns
+    const documents = []
+    if (str(row.data_source_act_ai))  documents.push({ type: 'Link', name: 'โครงการจาก ACT AI', url: str(row.data_source_act_ai),  access: 'Public' })
+    if (str(row.data_source_egp))     documents.push({ type: 'Link', name: 'โครงการจาก e-GP',   url: str(row.data_source_egp),     access: 'Public' })
+    if (str(row.data_source_other))   documents.push({ type: 'Link', name: 'ข้อมูลโครงการ',      url: str(row.data_source_other),   access: 'Public' })
 
     const params = [
       agencyId || null,
@@ -136,10 +161,10 @@ async function main() {
       str(row.province),
       str(row.district),
       subDistr,
-      str(row.related_person1),
-      str(row.related_person2),
+      personMap[caseId]?.[0] || str(row.related_person1),
+      personMap[caseId]?.[1] || str(row.related_person2),
       JSON.stringify(relatedAgencies),
-      JSON.stringify([]),
+      JSON.stringify(documents),
       JSON.stringify([]),
       JSON.stringify(timeline),
       str(row.project_type),
