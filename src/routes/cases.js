@@ -32,6 +32,7 @@ function rowToCase(row) {
     pendingDelete:      row.pending_delete,
     projectType:        row.project_type || '',
     personVisibility:   row.person_visibility || 'Internal',
+    linkPost:           row.link_post || '',
     relatedAgencies:    row.related_agencies || [],
     documents:          row.documents || [],
     activityLog:        row.activity_log || [],
@@ -122,9 +123,9 @@ router.post('/', authenticate, async (req, res) => {
          status, date, budget, source, last_updated, visibility, restricted_notes,
          description, agency_type, agency_role, region, province, district, sub_district,
          related_person1, related_person2, pending_delete, related_agencies,
-         documents, activity_log, timeline, project_type, notes, person_visibility
+         documents, activity_log, timeline, project_type, notes, person_visibility, link_post
        ) VALUES (
-         $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31
+         $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32
        ) RETURNING *`,
       [
         id, b.agencyId||null, b.title||'', b.agency||'', b.category||'', b.subCategory||'',
@@ -140,6 +141,7 @@ router.post('/', authenticate, async (req, res) => {
         b.projectType||'',
         JSON.stringify(b.notes||[]),
         b.personVisibility||'Internal',
+        b.linkPost||'',
       ]
     )
     res.status(201).json(rowToCase(rows[0]))
@@ -165,8 +167,8 @@ router.put('/:id', authenticate, async (req, res) => {
          sub_district=$20, related_person1=$21, related_person2=$22,
          pending_delete=$23, related_agencies=$24, documents=$25,
          activity_log=$26, timeline=$27, project_type=$28, notes=$29,
-         person_visibility=$30
-       WHERE id=$31 RETURNING *`,
+         person_visibility=$30, link_post=$31
+       WHERE id=$32 RETURNING *`,
       [
         b.agencyId||null, b.title||'', b.agency||'', b.category||'', b.subCategory||'',
         b.procurementMethod||'', b.status||'', b.date||'', b.budget||'', b.source||'',
@@ -181,6 +183,7 @@ router.put('/:id', authenticate, async (req, res) => {
         b.projectType||'',
         JSON.stringify(b.notes||[]),
         b.personVisibility||'Internal',
+        b.linkPost||'',
         req.params.id,
       ]
     )

@@ -52,8 +52,11 @@ async function migrate() {
       related_agencies    JSONB DEFAULT '[]',
       documents           JSONB DEFAULT '[]',
       activity_log        JSONB DEFAULT '[]',
-      timeline            JSONB DEFAULT '[]'
+      timeline            JSONB DEFAULT '[]',
+      link_post           TEXT DEFAULT ''
     );
+
+    ALTER TABLE cases ADD COLUMN IF NOT EXISTS link_post TEXT DEFAULT '';
 
     CREATE TABLE IF NOT EXISTS logs (
       id          SERIAL PRIMARY KEY,

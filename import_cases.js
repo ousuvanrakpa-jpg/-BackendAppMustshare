@@ -120,7 +120,22 @@ async function main() {
       relatedAgencies = [{ agencyId, agencyRole: str(row.agency_role) || 'เจ้าของโครงการ' }]
     }
 
-    const timeline = timelineMap[caseId] || []
+    // Build timeline จาก 8 status date columns ใน cases sheet
+    const STATUS_DATE_MAP = [
+      { col: 'วันที่_รับเรื่อง',        status: 'รับเรื่องและเผยแพร่เบาะแส' },
+      { col: 'วันที่_ขยายผลเชิงข่าว',  status: 'ถูกนำไปขยายผลเชิงข่าว' },
+      { col: 'วันที่_ส่งต่อหน่วยงาน',  status: 'ส่งต่อหน่วยงานตรวจสอบที่เกี่ยวข้อง' },
+      { col: 'วันที่_ตรวจสอบ',         status: 'อยู่ระหว่างการตรวจสอบ' },
+      { col: 'วันที่_ชี้แจง',          status: 'ได้รับการชี้แจง' },
+      { col: 'วันที่_แก้ไข',           status: 'อยู่ระหว่างการแก้ไข' },
+      { col: 'วันที่_สืบสวน',          status: 'อยู่ระหว่างการสืบสวนข้อเท็จจริง' },
+      { col: 'วันที่_ชี้มูล',          status: 'ชี้มูลทุจริต' },
+      { col: 'วันที่_ปิดเรื่อง',       status: 'ปิดเรื่อง' },
+    ]
+    const statusTimeline = STATUS_DATE_MAP
+      .filter(({ col }) => row[col])
+      .map(({ col, status }) => ({ date: excelDateToString(row[col]), status }))
+    const timeline = statusTimeline.length > 0 ? statusTimeline : (timelineMap[caseId] || [])
 
     // แปลง column names ให้ตรงกับ DB
     const visibility       = 'Internal'
@@ -171,6 +186,7 @@ async function main() {
       str(row.project_type),
       JSON.stringify(notes),
       personVisibility,
+      str(row.link_post),
     ]
 
     if (DRY_RUN) {
@@ -189,8 +205,8 @@ async function main() {
              agency_type=$15, agency_role=$16, region=$17, province=$18, district=$19,
              sub_district=$20, related_person1=$21, related_person2=$22,
              related_agencies=$23, documents=$24, activity_log=$25, timeline=$26,
-             project_type=$27, notes=$28, person_visibility=$29
-           WHERE id=$30`,
+             project_type=$27, notes=$28, person_visibility=$29, link_post=$30
+           WHERE id=$31`,
           [...params, caseId]
         )
         console.log(`  ✓ UPDATE ${caseId}: ${str(row.title).slice(0, 50)}`)
@@ -203,9 +219,9 @@ async function main() {
              description, agency_type, agency_role, region, province, district,
              sub_district, related_person1, related_person2,
              related_agencies, documents, activity_log, timeline, project_type, notes,
-             person_visibility
+             person_visibility, link_post
            ) VALUES (
-             $30,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29
+             $31,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30
            )`,
           [...params, caseId]
         )
@@ -221,7 +237,7 @@ async function main() {
   // ลบเคสที่ไม่มีใน Excel แล้ว
   const excelIds = new Set(validCases.map(r => str(r.case_id)))
   const { rows: dbRows } = await pool.query('SELECT id FROM cases')
-  const toDelete = dbRows.map(r => r.id).filter(id => !excelIds.has(id))
+  const toDelete = dbRows.map(r => r.id).filter(id => /^case-\d+$/.test(id) && !excelIds.has(id))
   let deleted = 0
   for (const id of toDelete) {
     if (DRY_RUN) {
