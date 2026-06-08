@@ -56,7 +56,22 @@ async function migrate() {
       link_post           TEXT DEFAULT ''
     );
 
-    ALTER TABLE cases ADD COLUMN IF NOT EXISTS link_post TEXT DEFAULT '';
+    ALTER TABLE cases ADD COLUMN IF NOT EXISTS link_post  TEXT DEFAULT '';
+    ALTER TABLE cases ADD COLUMN IF NOT EXISTS case_image TEXT DEFAULT '';
+
+    -- Foreign key: cases.agency_id → agencies.id
+    -- SET NULL keeps cases when an agency is deleted (audit trail), instead of cascading.
+    -- IF NOT EXISTS isn't supported on ADD CONSTRAINT, so we guard with a DO block.
+    DO $$ BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'fk_cases_agency'
+      ) THEN
+        ALTER TABLE cases
+          ADD CONSTRAINT fk_cases_agency
+          FOREIGN KEY (agency_id) REFERENCES agencies(id)
+          ON DELETE SET NULL;
+      END IF;
+    END $$;
 
     CREATE TABLE IF NOT EXISTS logs (
       id          SERIAL PRIMARY KEY,
