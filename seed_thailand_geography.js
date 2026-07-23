@@ -8,13 +8,18 @@
  * วิธีใช้: node seed_thailand_geography.js
  */
 
+require('dotenv').config()
 const { Pool } = require('pg')
 const db = require('thai-address-database')
 
+const host = process.env.DB_HOST || 'localhost'
 const pool = new Pool({
-  host: 'localhost', port: 5432,
-  database: 'mustshare',
-  user: 'postgres', password: 'rakparaknam0123',
+  host,
+  port:     parseInt(process.env.DB_PORT || '5432'),
+  database: process.env.DB_NAME     || 'mustshare',
+  user:     process.env.DB_USER     || 'postgres',
+  password: process.env.DB_PASSWORD || '',
+  ssl:      host === 'localhost' ? false : { rejectUnauthorized: false },
 })
 
 // ============================================================

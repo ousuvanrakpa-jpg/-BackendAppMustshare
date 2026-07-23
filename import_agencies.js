@@ -6,13 +6,19 @@
  *   node import_agencies.js --dry-run       ← ทดสอบไม่บันทึกจริง
  */
 
+require('dotenv').config()
 const XLSX = require('xlsx')
 const { Pool } = require('pg')
 const path = require('path')
 
+const host = process.env.DB_HOST || 'localhost'
 const pool = new Pool({
-  host: 'localhost', port: 5432,
-  database: 'mustshare', user: 'postgres', password: 'rakparaknam0123',
+  host,
+  port:     parseInt(process.env.DB_PORT || '5432'),
+  database: process.env.DB_NAME     || 'mustshare',
+  user:     process.env.DB_USER     || 'postgres',
+  password: process.env.DB_PASSWORD || '',
+  ssl:      host === 'localhost' ? false : { rejectUnauthorized: false },
 })
 
 const args     = process.argv.slice(2)
